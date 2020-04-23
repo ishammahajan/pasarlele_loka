@@ -25,6 +25,18 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
+def keystorePropertiesDebug = new Properties()
+def keystorePropertiesFileDebug = rootProject.file('key-debug.properties')
+if (keystorePropertiesFileDebug.exists()) {
+   keystorePropertiesDebug.load(new FileInputStream(keystorePropertiesFileDebug))
+}
+
+def keystorePropertiesRelease = new Properties()
+def keystorePropertiesFileRelease = rootProject.file('key-release.properties')
+if (keystorePropertiesFileRelease.exists()) {
+   keystorePropertiesRelease.load(new FileInputStream(keystorePropertiesFileRelease))
+}
+
 android {
     compileSdkVersion 28
 
@@ -46,11 +58,24 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            keyAlias keystorePropertiesRelease['keyAlias']
+            keyPassword keystorePropertiesRelease['keyPassword']
+            storeFile keystorePropertiesRelease['storeFile'] ? file(keystorePropertiesRelease['storeFile']) : null
+            storePassword keystorePropertiesRelease['storePassword']
+        }
+        debug {
+            keyAlias keystorePropertiesDebug['keyAlias']
+            keyPassword keystorePropertiesDebug['keyPassword']
+            storeFile keystorePropertiesDebug['storeFile'] ? file(keystorePropertiesDebug['storeFile']) : null
+            storePassword keystorePropertiesDebug['storePassword']
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 }
@@ -65,3 +90,5 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 }
+
+apply plugin: 'com.google.gms.google-services'
