@@ -1,4 +1,4 @@
-package com.example.pasarlele_loka
+package com.thewhirringmechanic.pasarleleloka
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
