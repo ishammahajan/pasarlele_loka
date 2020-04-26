@@ -251,6 +251,52 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+              child: GestureDetector(
+                onTap: () async {
+                  if (_emailKey.currentState.value == '') {
+                    widget.scaffoldKey.currentState.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Please enter your email in the field...',
+                        ),
+                      ),
+                    );
+                  }
+
+                  bool sentEmail =
+                      await resetPassword(_emailKey.currentState.value.trim())
+                          .timeout(
+                    Duration(seconds: 5),
+                    onTimeout: () => false,
+                  );
+
+                  if (sentEmail) {
+                    widget.scaffoldKey.currentState.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Please check your email for a password reset link...',
+                        ),
+                      ),
+                    );
+                  } else {
+                    widget.scaffoldKey.currentState.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Difficulty accessing servers...',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Text(
+                  'Forgot Password',
+                  textScaleFactor: 0.75,
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                ),
+              ),
+            )
           ],
         ),
       ),

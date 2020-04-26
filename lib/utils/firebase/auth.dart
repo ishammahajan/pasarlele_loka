@@ -80,3 +80,9 @@ Future<AuthResultStatus> authenticate(
       break;
   }
 }
+
+Future<bool> resetPassword(String email) async {
+  await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+  return true;
+}
