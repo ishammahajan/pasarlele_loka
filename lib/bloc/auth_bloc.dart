@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/user.dart';
+import '../utils/firebase/user/current_user_storage.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -28,6 +32,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
 
     if (event is LoggedInEvent) {
+      FirebaseUser user = await FirebaseAuth.instance.currentUser();
+      await saveCurrentUser(User.fromFirebaseUser(user));
+
       yield AuthCompleted();
     }
   }
