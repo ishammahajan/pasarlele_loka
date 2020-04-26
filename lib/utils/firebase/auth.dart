@@ -1,24 +1,59 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:pasarlele_loka/utils/firebase/database/user_transactions.dart';
+
+import 'user/update_profile.dart';
 
 enum AuthMode { GOOGLE, EMAIL }
 
-Future<FirebaseUser> authenticate(
+enum AuthResultStatus {
+  COMPLETED,
+  WRONG_PASSWORD,
+  NO_USER_FOUND,
+}
+
+Future<AuthResultStatus> authenticate(
   AuthMode mode, {
   String email,
   String password,
+  String displayName,
 }) async {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   switch (mode) {
     case AuthMode.EMAIL:
-      final FirebaseUser user = (await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      ))
-          .user;
-      return user;
+      try {
+        AuthResult result = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        if (result.user != null) {
+          return AuthResultStatus.COMPLETED;
+        }
+      } catch (exception) {
+        if (exception is PlatformException) {
+          if (exception.code == 'ERROR_USER_NOT_FOUND') {
+            if (displayName == null) {
+              return AuthResultStatus.NO_USER_FOUND;
+            }
+
+            final FirebaseUser user =
+                (await _auth.createUserWithEmailAndPassword(
+              email: email,
+              password: password,
+            ))
+                    .user;
+
+            if (await setDisplayName(user, displayName)) {
+              return AuthResultStatus.COMPLETED;
+            }
+          } else if (exception.code == 'ERROR_WRONG_PASSWORD')
+            return AuthResultStatus.WRONG_PASSWORD;
+        }
+      }
+
+      return null;
       break;
 
     case AuthMode.GOOGLE:
@@ -36,7 +71,7 @@ Future<FirebaseUser> authenticate(
       final FirebaseUser user =
           (await _auth.signInWithCredential(credential)).user;
       print("[Firebase Auth] Signed In: " + user.displayName);
-      return user;
+      return AuthResultStatus.COMPLETED;
       break;
 
     default:

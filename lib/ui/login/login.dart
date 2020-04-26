@@ -13,9 +13,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  GlobalKey _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Theme.of(context).primaryColor,
             ),
           ),
-          EmailLoginForm(),
+          EmailLoginForm(_scaffoldKey),
           GoogleLoginForm(),
         ],
       ),

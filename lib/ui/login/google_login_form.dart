@@ -55,8 +55,10 @@ class _GoogleLoginFormState extends State<GoogleLoginForm> {
               ),
               color: Colors.white,
               onPressed: () async {
-                FirebaseUser user = await authenticate(AuthMode.GOOGLE);
-                BlocProvider.of<AuthBloc>(context).add(LoggedInEvent());
+                AuthResultStatus result = await authenticate(AuthMode.GOOGLE);
+                if (result != null) {
+                  BlocProvider.of<AuthBloc>(context).add(LoggedInEvent());
+                }
               },
             ),
           ),

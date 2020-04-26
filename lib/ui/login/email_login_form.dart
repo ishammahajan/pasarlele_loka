@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,12 +7,22 @@ import '../../bloc/auth_bloc.dart';
 import '../../utils/firebase/auth.dart';
 
 class EmailLoginForm extends StatefulWidget {
+  GlobalKey<ScaffoldState> scaffoldKey;
+
+  EmailLoginForm(this.scaffoldKey);
+
   @override
   _EmailLoginFormState createState() => _EmailLoginFormState();
 }
 
 class _EmailLoginFormState extends State<EmailLoginForm> {
+  bool isSignup = false;
+
   final _formKey = GlobalKey<FormState>();
+
+  final _emailKey = GlobalKey<FormFieldState>();
+  final _displayNameKey = GlobalKey<FormFieldState>();
+  final _passwordKey = GlobalKey<FormFieldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +35,56 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Welcome, proceed with your login / signup',
-                textScaleFactor: 1.2,
+              child: RichText(
+                text: TextSpan(
+                  text: 'Welcome, proceed with your ',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyText1.color,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: 'login',
+                      style: TextStyle(
+                        color: isSignup
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).textTheme.bodyText1.color,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          print('tapped login');
+                          setState(() {
+                            isSignup = false;
+                          });
+                        },
+                    ),
+                    TextSpan(
+                      text: ' / ',
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyText1.color,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'signup',
+                      style: TextStyle(
+                        color: isSignup
+                            ? Theme.of(context).textTheme.bodyText1.color
+                            : Theme.of(context).primaryColor,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          print('tapped signup');
+                          setState(() {
+                            isSignup = true;
+                          });
+                        },
+                    ),
+                  ],
+                ),
               ),
+              // child: Text(
+              //   'Welcome, proceed with your login / signup',
+              //   textScaleFactor: 1.2,
+              // ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -40,6 +97,7 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
+                key: _emailKey,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Email',
@@ -55,7 +113,7 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
                     multiLine: false,
                   );
 
-                  if (!matcher.hasMatch(value)) {
+                  if (!matcher.hasMatch(value.trim())) {
                     return 'Please enter a valid email id';
                   }
 
@@ -63,13 +121,30 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
                 },
               ),
             ),
+            isSignup
+                ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      key: _displayNameKey,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Display Name',
+                      ),
+                      validator: (value) {
+                        return null;
+                      },
+                    ),
+                  )
+                : Container(),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
+                key: _passwordKey,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Password',
                 ),
+                obscureText: true,
                 validator: (value) {
                   if (value.isEmpty) {
                     return 'Please enter some text';
@@ -123,8 +198,50 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
                   color: Theme.of(context).primaryColor,
                   onPressed: () async {
                     if (_formKey.currentState.validate()) {
-                      FirebaseUser user = await authenticate(AuthMode.GOOGLE);
-                      BlocProvider.of<AuthBloc>(context).add(LoggedInEvent());
+                      AuthResultStatus result = await authenticate(
+                        AuthMode.EMAIL,
+                        email: _emailKey.currentState.value.trim(),
+                        password: _passwordKey.currentState.value,
+                        displayName: _displayNameKey.currentState == null
+                            ? null
+                            : _displayNameKey.currentState.value == ''
+                                ? null
+                                : _displayNameKey.currentState.value,
+                      ).timeout(Duration(seconds: 5), onTimeout: () => null);
+
+                      if (result == AuthResultStatus.NO_USER_FOUND) {
+                        widget.scaffoldKey.currentState.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'If this is your first time, please signup instead...',
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (result == AuthResultStatus.WRONG_PASSWORD) {
+                        widget.scaffoldKey.currentState.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Wrong username or password...',
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (result == AuthResultStatus.COMPLETED) {
+                        BlocProvider.of<AuthBloc>(context).add(LoggedInEvent());
+                      }
+
+                      if (result == null) {
+                        widget.scaffoldKey.currentState.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Having difficulty accessing servers...',
+                            ),
+                          ),
+                        );
+                      }
                     }
                   },
                   child: Text(
