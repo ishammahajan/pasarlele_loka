@@ -197,16 +197,22 @@ class _EmailLoginFormState extends State<EmailLoginForm> {
                 child: RaisedButton(
                   color: Theme.of(context).primaryColor,
                   onPressed: () async {
+                    String displayName;
+
+                    if (isSignup) {
+                      displayName = _displayNameKey.currentState == null
+                          ? null
+                          : _displayNameKey.currentState.value == ''
+                              ? null
+                              : _displayNameKey.currentState.value;
+                    }
+
                     if (_formKey.currentState.validate()) {
                       AuthResultStatus result = await authenticate(
                         AuthMode.EMAIL,
                         email: _emailKey.currentState.value.trim(),
                         password: _passwordKey.currentState.value,
-                        displayName: _displayNameKey.currentState == null
-                            ? null
-                            : _displayNameKey.currentState.value == ''
-                                ? null
-                                : _displayNameKey.currentState.value,
+                        displayName: displayName,
                       ).timeout(Duration(seconds: 5), onTimeout: () => null);
 
                       if (result == AuthResultStatus.NO_USER_FOUND) {
